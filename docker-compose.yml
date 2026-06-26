@@ -1,0 +1,76 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: hospital_db
+    restart: always
+    environment:
+      POSTGRES_USER: hospital_admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: hospital_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hospital_admin -d hospital_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  fastapi_backend:
+    build:
+      context: ./fastapi_backend
+      dockerfile: Dockerfile
+    container_name: hospital_api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://hospital_admin:password123@db:5432/hospital_ai
+      - SECRET_KEY=09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hospital_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SQL_HOST=db
+      - SQL_USER=hospital_admin
+      - SQL_PASSWORD=password123
+      - SQL_DB_NAME=hospital_ai
+      - SQL_ADMIN_USER=hospital_admin
+      - SQL_ADMIN_PASSWORD=password123
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=hospital-ai-secret-key-9988
+    depends_on:
+      db:
+        condition: service_healthy
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: hospital_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@hospital.com
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

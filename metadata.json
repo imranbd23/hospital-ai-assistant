@@ -1,0 +1,6 @@
+{
+  "name": "Hospital AI Assistant",
+  "description": "An interactive workspace for a production-ready FastAPI backend with PostgreSQL, SQLAlchemy, JWT, Alembic, and Docker, featuring an API client and live Gemini AI integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
